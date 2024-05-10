@@ -120,21 +120,6 @@ fabric.properties
 # Manually added
 *.iml
 
-### NetBeans ###
-nbproject/private/
-build/
-nbbuild/
-dist/
-nbdist/
-nbactions.xml
-.nb-gradle/
-
-
-### Windows ###
-# Windows image file caches
-Thumbs.db
-ehthumbs.db
-
 # Folder config file
 Desktop.ini
 
@@ -191,3 +176,5 @@ Temporary Items
 # Linux trash folder which might appear on any partition or disk
 .Trash-*
 
+target
+build
