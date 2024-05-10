@@ -77,8 +77,7 @@
     <target name="scp" depends="build">
         <input message="Enter username: " addproperty="server.username"/>
         <input message="Enter password: " addproperty="server.password"/>
-        <scp file="${war.file}" todir="${server.username}:${server.password}@${server.host}:${server.remote.dir}" port="${server.port}" trust="true">
-        </scp>
+        <scp file="${war.file}" todir="${server.username}:${server.password}@${server.host}:${server.remote.dir}" port="${server.port}" trust="true"/>
     </target>
 
     <target name="music">
