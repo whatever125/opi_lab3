@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
-<project name="LAB3">
+<project name="LAB3" default="build">
+    <taskdef resource="net/sf/antcontrib/antlib.xml"/>
+
     <property name="src.dir" location="src"/>
     <property name="build.dir" location="build"/>
     <property name="lib.dir" location="lib"/>
@@ -11,6 +13,9 @@
     <property name="classes.dir" location="${build.dir}/classes"/>
     <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
     <property name="music.file" location="resources/music.mp3"/>
+    <property name="classes.file" location="resources/classes.txt"/>
+    <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
+    <property name="manifest.file" location="${build.dir}/webapp/META-INF/MANIFEST.MF"/>
     <property name="server.host" value="se.ifmo.ru"/>
     <property name="server.port" value="2222"/>
     <property name="server.remote.dir" value="~/wildfly/wildfly-preview-26.1.3.Final/standalone/deployments"/>
@@ -42,27 +47,19 @@
             <compilerarg line="-Xlint:-options"/>
         </javac>
         <copy todir="${classes.dir}">
-            <fileset dir="${resources.dir}">
-                <include name="**/*"/>
-            </fileset>
+            <fileset dir="${resources.dir}"/>
         </copy>
     </target>
 
     <target name="build" depends="compile">
         <copy todir="${build.dir}/webapp">
-            <fileset dir="${webapp.dir}">
-                <include name="**/*"/>
-            </fileset>
+            <fileset dir="${webapp.dir}"/>
         </copy>
         <copy todir="${build.dir}/webapp/WEB-INF/classes">
-            <fileset dir="${classes.dir}">
-                <include name="**/*"/>
-            </fileset>
+            <fileset dir="${classes.dir}"/>
         </copy>
         <copy todir="${build.dir}/webapp/WEB-INF/lib">
-            <fileset dir="${lib.dir}">
-                <include name="**/*.jar"/>
-            </fileset>
+            <fileset dir="${lib.dir}" includes="**/*.jar"/>
         </copy>
 
         <war destfile="${war.file}" webxml="${webapp.dir}/WEB-INF/web.xml">
@@ -79,27 +76,6 @@
 
     <target name="clean">
         <delete dir="${build.dir}"/>
-    </target>
-
-    <target name="xml">
-        <xmlvalidate lenient="true">
-            <fileset dir="${src.dir}">
-                <include name="**/*.xml"/>
-            </fileset>
-        </xmlvalidate>
-    </target>
-
-    <target name="scp" depends="build">
-        <input message="Enter username: " addproperty="server.username"/>
-        <input message="Enter password: " addproperty="server.password"/>
-        <scp file="${war.file}" todir="${server.username}:${server.password}@${server.host}:${server.remote.dir}" port="${server.port}" trust="true"/>
-    </target>
-
-    <target name="music">
-        <exec executable="mpg123">
-            <arg value="-q"/>
-            <arg value="${music.file}"/>
-        </exec>
     </target>
 
     <target name="init-test">
@@ -125,6 +101,144 @@
                 </fileset>
             </batchtest>
         </junit>
+    </target>
+
+    <target name="xml">
+        <xmlvalidate lenient="true">
+            <fileset dir="${src.dir}" includes="**/*.xml"/>
+        </xmlvalidate>
+    </target>
+
+    <target name="music">
+        <exec executable="mpg123">
+            <arg value="-q"/>
+            <arg value="${music.file}"/>
+        </exec>
+    </target>
+
+    <target name="scp" depends="build">
+        <input message="Enter username: " addproperty="server.username"/>
+        <input message="Enter password: " addproperty="server.password"/>
+        <scp file="${war.file}" todir="${server.username}:${server.password}@${server.host}:${server.remote.dir}" port="${server.port}" trust="true"/>
+    </target>
+
+    <target name="doc">
+        <fileset dir="${build.dir}" id="files.to.process"/>
+        <for param="file">
+            <path>
+                <fileset refid="files.to.process"/>
+            </path>
+            <sequential>
+                <checksum algorithm="md5" property="@{file}.md5">
+                    <file name="@{file}"/>
+                </checksum>
+                <checksum algorithm="sha1" property="@{file}.sha1">
+                    <file name="@{file}"/>
+                </checksum>
+                <pathconvert property="@{file}.relative">
+                    <path location="@{file}"/>
+                    <globmapper from="${basedir}/*" to="*" />
+                </pathconvert>
+                <manifest file="${manifest.file}" mode="update">
+                    <section name="${@{file}.relative}">
+                        <attribute name="MD5-Digest" value="${@{file}.md5}"/>
+                        <attribute name="SHA1-Digest" value="${@{file}.sha1}"/>
+                    </section>
+                </manifest>
+            </sequential>
+        </for>
+    </target>
+
+    <target name="diff">
+        <exec executable="git" outputproperty="git.status" failonerror="true">
+            <arg value="status"/>
+            <arg value="--porcelain"/>
+        </exec>
+
+        <loadfile property="classes.list" srcFile="${classes.file}"/>
+        <var name="message" value="Cannot commit - changes in"/>
+
+        <for param="class" list="${classes.list}" delimiter="&#10;">
+            <sequential>
+                <if>
+                    <contains string="${git.status}" substring="@{class}.java"/>
+                    <then>
+                        <var name="line.matched" value="true"/>
+                        <var name="message" value="${message} @{class}"/>
+                    </then>
+                </if>
+            </sequential>
+        </for>
+
+        <if>
+            <isset property="line.matched"/>
+            <then>
+                <echo message="${message}"/>
+            </then>
+            <else>
+                <exec executable="git" failonerror="true">
+                    <arg value="add"/>
+                    <arg value="-A"/>
+                </exec>
+                <exec executable="git" failonerror="true">
+                    <arg value="commit"/>
+                    <arg value="-m"/>
+                    <arg value="Automatic commit"/>
+                </exec>
+            </else>
+        </if>
+    </target>
+
+    <target name="team">
+        <exec executable="git" failonerror="false">
+            <arg value="stash"/>
+        </exec>
+
+        <exec executable="git" outputproperty="current.commit" failonerror="false">
+            <arg value="rev-parse"/>
+            <arg value="HEAD"/>
+        </exec>
+        <exec executable="git" outputproperty="current.branch" failonerror="false">
+            <arg value="rev-parse"/>
+            <arg value="--abbrev-ref"/>
+            <arg value="HEAD"/>
+        </exec>
+
+        <property name="revision1" value="${current.commit}~1"/>
+        <property name="revision2" value="${current.commit}~2"/>
+
+        <exec executable="git" failonerror="false">
+            <arg value="checkout"/>
+            <arg value="${revision1}"/>
+        </exec>
+        <antcall target="build">
+            <param name="war.file" value="${build.dir}/${ant.project.name}_${revision1}.war"/>
+        </antcall>
+
+        <exec executable="git" failonerror="false">
+            <arg value="checkout"/>
+            <arg value="${revision2}"/>
+        </exec>
+        <antcall target="build">
+            <param name="war.file" value="${build.dir}/${ant.project.name}_${revision2}.war"/>
+        </antcall>
+
+        <zip destfile="${build.dir}/prev-revisions.zip">
+            <fileset dir="${build.dir}">
+                <include name="${ant.project.name}_${revision1}.war"/>
+                <include name="${ant.project.name}_${revision2}.war"/>
+            </fileset>
+        </zip>
+
+        <exec executable="git" failonerror="false">
+            <arg value="checkout"/>
+            <arg value="${current.branch}"/>
+        </exec>
+
+        <exec executable="git" failonerror="false">
+            <arg value="stash"/>
+            <arg value="pop"/>
+        </exec>
     </target>
 
 </project>
