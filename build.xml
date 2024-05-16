@@ -11,6 +11,7 @@
     <property name="music.file" location="resources/music.mp3"/>
     <property name="classes.file" location="resources/classes.txt"/>
     <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
+    <property name="manifest.file" location="${build.dir}/webapp/META-INF/MANIFEST.MF"/>
     <property name="server.host" value="se.ifmo.ru"/>
     <property name="server.port" value="2222"/>
     <property name="server.remote.dir" value="~/wildfly/wildfly-preview-26.1.3.Final/standalone/deployments"/>
@@ -76,6 +77,33 @@
             <arg value="-q"/>
             <arg value="${music.file}"/>
         </exec>
+    </target>
+
+    <target name="doc">
+        <fileset dir="${build.dir}" id="files.to.process"/>
+        <for param="file">
+            <path>
+                <fileset refid="files.to.process"/>
+            </path>
+            <sequential>
+                <checksum algorithm="md5" property="@{file}.md5">
+                    <file name="@{file}"/>
+                </checksum>
+                <checksum algorithm="sha1" property="@{file}.sha1">
+                    <file name="@{file}"/>
+                </checksum>
+                <pathconvert property="@{file}.relative">
+                    <path location="@{file}"/>
+                    <globmapper from="${basedir}/*" to="*" />
+                </pathconvert>
+                <manifest file="${manifest.file}" mode="update">
+                    <section name="${@{file}.relative}">
+                        <attribute name="MD5-Digest" value="${@{file}.md5}"/>
+                        <attribute name="SHA1-Digest" value="${@{file}.sha1}"/>
+                    </section>
+                </manifest>
+            </sequential>
+        </for>
     </target>
 
     <target name="diff">
