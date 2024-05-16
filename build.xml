@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="LAB3">
+<project name="LAB3" default="build">
     <property name="src.dir" location="src"/>
     <property name="build.dir" location="build"/>
     <property name="resources.dir" location="${src.dir}/main/resources"/>
@@ -20,34 +20,24 @@
     <target name="compile" depends="init">
         <javac srcdir="${src.dir}" destdir="${classes.dir}" includeAntRuntime="false" release="17">
             <classpath>
-                <fileset dir="${lib.dir}">
-                    <include name="**/*.jar"/>
-                </fileset>
+                <fileset dir="${lib.dir}" includes="**/*.jar"/>
             </classpath>
             <compilerarg line="-Xlint:-options"/>
         </javac>
         <copy todir="${classes.dir}">
-            <fileset dir="${resources.dir}">
-                <include name="**/*"/>
-            </fileset>
+            <fileset dir="${resources.dir}"/>
         </copy>
     </target>
 
     <target name="build" depends="compile">
         <copy todir="${build.dir}/webapp">
-            <fileset dir="${webapp.dir}">
-                <include name="**/*"/>
-            </fileset>
+            <fileset dir="${webapp.dir}"/>
         </copy>
         <copy todir="${build.dir}/webapp/WEB-INF/classes">
-            <fileset dir="${classes.dir}">
-                <include name="**/*"/>
-            </fileset>
+            <fileset dir="${classes.dir}"/>
         </copy>
         <copy todir="${build.dir}/webapp/WEB-INF/lib">
-            <fileset dir="${lib.dir}">
-                <include name="**/*.jar"/>
-            </fileset>
+            <fileset dir="${lib.dir}" includes="**/*.jar"/>
         </copy>
 
         <war destfile="${war.file}" webxml="${webapp.dir}/WEB-INF/web.xml">
@@ -68,9 +58,7 @@
 
     <target name="xml">
         <xmlvalidate lenient="true">
-            <fileset dir="${src.dir}">
-                <include name="**/*.xml"/>
-            </fileset>
+            <fileset dir="${src.dir}" includes="**/*.xml"/>
         </xmlvalidate>
     </target>
 
@@ -85,6 +73,39 @@
             <arg value="-q"/>
             <arg value="${music.file}"/>
         </exec>
+    </target>
+
+    <target name="team">
+        <exec executable="git" outputproperty="current.commit" failonerror="false">
+            <arg value="rev-parse"/>
+            <arg value="HEAD"/>
+        </exec>
+
+        <property name="revision1" value="${current.commit}~1"/>
+        <property name="revision2" value="${current.commit}~2"/>
+
+        <exec executable="git" failonerror="false">
+            <arg value="checkout"/>
+            <arg value="${revision1}"/>
+        </exec>
+        <antcall target="build">
+            <param name="war.file" value="${war.file}~${revision1}.war"/>
+        </antcall>
+
+        <exec executable="git" failonerror="false">
+            <arg value="checkout"/>
+            <arg value="${revision2}"/>
+        </exec>
+        <antcall target="build">
+            <param name="war.file" value="${war.file}~${revision2}.war"/>
+        </antcall>
+
+        <zip destfile="${build.dir}/team-revisions.zip">
+            <fileset dir="${build.dir}">
+                <include name="${war.file}~${revision1}.war"/>
+                <include name="${war.file}~${revision2}.war"/>
+            </fileset>
+        </zip>
     </target>
 
 </project>
