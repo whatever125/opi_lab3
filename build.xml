@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <project name="LAB3" default="build">
+    <taskdef resource="net/sf/antcontrib/antlib.xml"/>
+
     <property name="src.dir" location="src"/>
     <property name="build.dir" location="build"/>
     <property name="resources.dir" location="${src.dir}/main/resources"/>
@@ -7,6 +9,7 @@
     <property name="classes.dir" location="${build.dir}/classes"/>
     <property name="webapp.dir" location="${src.dir}/main/webapp"/>
     <property name="music.file" location="resources/music.mp3"/>
+    <property name="classes.file" location="resources/classes.txt"/>
     <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
     <property name="server.host" value="se.ifmo.ru"/>
     <property name="server.port" value="2222"/>
@@ -73,6 +76,46 @@
             <arg value="-q"/>
             <arg value="${music.file}"/>
         </exec>
+    </target>
+
+    <target name="diff">
+        <exec executable="git" outputproperty="git.status" failonerror="true">
+            <arg value="status"/>
+            <arg value="--porcelain"/>
+        </exec>
+
+        <loadfile property="classes.list" srcFile="${classes.file}"/>
+        <var name="message" value="Cannot commit - changes in"/>
+
+        <for param="class" list="${classes.list}" delimiter="&#10;">
+            <sequential>
+                <if>
+                    <contains string="${git.status}" substring="@{class}.java"/>
+                    <then>
+                        <var name="line.matched" value="true"/>
+                        <var name="message" value="${message} @{class}"/>
+                    </then>
+                </if>
+            </sequential>
+        </for>
+
+        <if>
+            <isset property="line.matched"/>
+            <then>
+                <echo message="${message}"/>
+            </then>
+            <else>
+                <exec executable="git" failonerror="true">
+                    <arg value="add"/>
+                    <arg value="-A"/>
+                </exec>
+                <exec executable="git" failonerror="true">
+                    <arg value="commit"/>
+                    <arg value="-m"/>
+                    <arg value="Automatic commit"/>
+                </exec>
+            </else>
+        </if>
     </target>
 
     <target name="team">
