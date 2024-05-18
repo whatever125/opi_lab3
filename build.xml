@@ -6,6 +6,7 @@
     <property name="build.dir" location="build"/>
     <property name="lib.dir" location="lib"/>
     <property name="resources.dir" location="${src.dir}/main/resources"/>
+    <property name="native2ascii.resources" location="${resources.dir}/native2ascii"/>
     <property name="webapp.dir" location="${src.dir}/main/webapp"/>
     <property name="test.dir" location="${src.dir}/test"/>
     <property name="test.classes.dir" location="${build.dir}/test-classes"/>
@@ -107,6 +108,12 @@
         <xmlvalidate lenient="true">
             <fileset dir="${src.dir}" includes="**/*.xml"/>
         </xmlvalidate>
+    </target>
+
+    <target name="native2ascii" description="Преобразование native2ascii для копий файлов локализации">
+        <native2ascii src="${resources.dir}"
+                      dest="${native2ascii.resources}"
+                      includes="**/*.properties"/>
     </target>
 
     <target name="music">
@@ -229,6 +236,70 @@
                 <include name="${ant.project.name}_${revision2}.war"/>
             </fileset>
         </zip>
+
+        <exec executable="git" failonerror="false">
+            <arg value="checkout"/>
+            <arg value="${current.branch}"/>
+        </exec>
+
+        <exec executable="git" failonerror="false">
+            <arg value="stash"/>
+            <arg value="pop"/>
+        </exec>
+    </target>
+
+    <target name="history">
+        <exec executable="git" failonerror="false">
+            <arg value="stash"/>
+        </exec>
+
+        <exec executable="git" outputproperty="current.commit" failonerror="true">
+            <arg value="rev-parse"/>
+            <arg value="HEAD"/>
+        </exec>
+<!--        <echo message="${current.commit}"/>-->
+        <exec executable="git" outputproperty="current.branch" failonerror="false">
+            <arg value="rev-parse"/>
+            <arg value="--abbrev-ref"/>
+            <arg value="HEAD"/>
+        </exec>
+
+        <property name="previous.revision" value="HEAD"/>
+<!--        <echo message="${previous.revision}"/>-->
+
+        <exec executable="git" outputproperty="commits.list">
+            <arg line="rev-list"/>
+            <arg line="HEAD"/>
+        </exec>
+<!--        <echo message="${commits.list}"/>-->
+
+        <for param="commit" list="${commits.list}" delimiter="&#10;" keepgoing="true">
+            <sequential>
+                <trycatch>
+                    <try>
+                        <echo message="&#10;Checkout revision @{commit}"/>
+                        <exec executable="git" failonerror="true">
+                            <arg value="checkout"/>
+                            <arg value="@{commit}"/>
+                        </exec>
+                        <antcall target="compile"/>
+                        <echo message="Revision @{commit} compiled successfully"/>
+                        <property name="revision.compiled" value="true"/>
+                    </try>
+                    <catch>
+                        <echo message="Error compiling revision @{commit}"/>
+                    </catch>
+                    <finally>
+                        <if>
+                            <isset property="revision.compiled"/>
+                            <then>
+                                <fail/>
+                            </then>
+                        </if>
+                    </finally>
+                </trycatch>
+            </sequential>
+        </for>
 
         <exec executable="git" failonerror="false">
             <arg value="checkout"/>
