@@ -275,29 +275,28 @@
 
         <for param="commit" list="${commits.list}" delimiter="&#10;" keepgoing="true">
             <sequential>
-                <trycatch>
-                    <try>
-                        <echo message="&#10;Checkout revision @{commit}"/>
-                        <exec executable="git" failonerror="true">
-                            <arg value="checkout"/>
-                            <arg value="@{commit}"/>
-                        </exec>
-                        <antcall target="compile"/>
-                        <echo message="Revision @{commit} compiled successfully"/>
-                        <property name="revision.compiled" value="true"/>
-                    </try>
-                    <catch>
-                        <echo message="Error compiling revision @{commit}"/>
-                    </catch>
-                    <finally>
-                        <if>
-                            <isset property="revision.compiled"/>
-                            <then>
-                                <fail/>
-                            </then>
-                        </if>
-                    </finally>
-                </trycatch>
+                <if>
+                    <not>
+                        <isset property="revision.compiled"/>
+                    </not>
+                    <then>
+                        <trycatch>
+                            <try>
+                                <echo message="&#10;Checkout revision @{commit}&#10;&#10;"/>
+                                <exec executable="git" failonerror="true">
+                                    <arg value="checkout"/>
+                                    <arg value="@{commit}"/>
+                                </exec>
+                                <antcall target="compile"/>
+                                <echo message="&#10;Revision @{commit} compiled successfully&#10;&#10;"/>
+                                <property name="revision.compiled" value="true"/>
+                            </try>
+                            <catch>
+                                <echo message="&#10;Error compiling revision @{commit}&#10;"/>
+                            </catch>
+                        </trycatch>
+                    </then>
+                </if>
             </sequential>
         </for>
 
