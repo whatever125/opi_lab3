@@ -6,7 +6,7 @@
     <property name="build.dir" location="build"/>
     <property name="lib.dir" location="lib"/>
     <property name="resources.dir" location="${src.dir}/main/resources"/>
-    <property name="native2ascii.resources" location="${resources.dir}/native2ascii"/>
+    <property name="native2ascii.dir" location="${resources.dir}/native2ascii"/>
     <property name="webapp.dir" location="${src.dir}/main/webapp"/>
     <property name="test.dir" location="${src.dir}/test"/>
     <property name="test.classes.dir" location="${build.dir}/test-classes"/>
@@ -110,10 +110,9 @@
         </xmlvalidate>
     </target>
 
-    <target name="native2ascii" description="Преобразование native2ascii для копий файлов локализации">
-        <native2ascii src="${resources.dir}"
-                      dest="${native2ascii.resources}"
-                      includes="**/*.properties"/>
+    <target name="native2ascii">
+        <native2ascii src="${resources.dir}" dest="${native2ascii.dir}"
+                      includes="**/*.properties" excludes="hibernate.properties"/>
     </target>
 
     <target name="music">
