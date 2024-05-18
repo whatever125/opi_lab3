@@ -197,24 +197,22 @@
     </target>
 
     <target name="team">
-        <exec executable="git" failonerror="false">
+        <exec executable="git" failonerror="true">
             <arg value="stash"/>
         </exec>
-
-        <exec executable="git" outputproperty="current.commit" failonerror="false">
+        <exec executable="git" outputproperty="current.commit" failonerror="true">
             <arg value="rev-parse"/>
             <arg value="HEAD"/>
         </exec>
-        <exec executable="git" outputproperty="current.branch" failonerror="false">
+        <exec executable="git" outputproperty="current.branch" failonerror="true">
             <arg value="rev-parse"/>
             <arg value="--abbrev-ref"/>
             <arg value="HEAD"/>
         </exec>
-
         <property name="revision1" value="${current.commit}~1"/>
         <property name="revision2" value="${current.commit}~2"/>
 
-        <exec executable="git" failonerror="false">
+        <exec executable="git" failonerror="true">
             <arg value="checkout"/>
             <arg value="${revision1}"/>
         </exec>
@@ -222,7 +220,7 @@
             <param name="war.file" value="${build.dir}/${ant.project.name}_${revision1}.war"/>
         </antcall>
 
-        <exec executable="git" failonerror="false">
+        <exec executable="git" failonerror="true">
             <arg value="checkout"/>
             <arg value="${revision2}"/>
         </exec>
@@ -237,41 +235,33 @@
             </fileset>
         </zip>
 
-        <exec executable="git" failonerror="false">
+        <exec executable="git" failonerror="true">
             <arg value="checkout"/>
             <arg value="${current.branch}"/>
         </exec>
-
-        <exec executable="git" failonerror="false">
+        <exec executable="git" failonerror="true">
             <arg value="stash"/>
             <arg value="pop"/>
         </exec>
     </target>
 
     <target name="history">
-        <exec executable="git" failonerror="false">
+        <exec executable="git" failonerror="true">
             <arg value="stash"/>
         </exec>
-
         <exec executable="git" outputproperty="current.commit" failonerror="true">
             <arg value="rev-parse"/>
             <arg value="HEAD"/>
         </exec>
-<!--        <echo message="${current.commit}"/>-->
-        <exec executable="git" outputproperty="current.branch" failonerror="false">
+        <exec executable="git" outputproperty="current.branch" failonerror="true">
             <arg value="rev-parse"/>
             <arg value="--abbrev-ref"/>
             <arg value="HEAD"/>
         </exec>
-
-        <property name="previous.revision" value="HEAD"/>
-<!--        <echo message="${previous.revision}"/>-->
-
         <exec executable="git" outputproperty="commits.list">
             <arg line="rev-list"/>
             <arg line="HEAD"/>
         </exec>
-<!--        <echo message="${commits.list}"/>-->
 
         <for param="commit" list="${commits.list}" delimiter="&#10;" keepgoing="true">
             <sequential>
@@ -300,12 +290,11 @@
             </sequential>
         </for>
 
-        <exec executable="git" failonerror="false">
+        <exec executable="git" failonerror="true">
             <arg value="checkout"/>
             <arg value="${current.branch}"/>
         </exec>
-
-        <exec executable="git" failonerror="false">
+        <exec executable="git" failonerror="true">
             <arg value="stash"/>
             <arg value="pop"/>
         </exec>
