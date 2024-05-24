@@ -19,6 +19,9 @@
     <property name="classes.file" location="resources/classes.txt"/>
     <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
     <property name="manifest.file" location="${build.dir}/webapp/META-INF/MANIFEST.MF"/>
+    <property name="java.home" location="~/Library/Java/JavaVirtualMachines/jbr-17.0.7/Contents/Home/"/>
+    <property name="javac.args" value="-Xlint:-options"/>
+    <property name="vm.args" value="-Xms512m -Xmx1024m"/>
 
     <property name="server.host" value="se.ifmo.ru"/>
     <property name="server.port" value="2222"/>
@@ -173,6 +176,28 @@
             <fileset dir="${alt.src.dir}"/>
         </copy>
         <delete dir="${alt.src.dir}"/>
+    </target>
+
+    <target name="env" depends="init">
+        <fail unless="java.home" message="java.home is not set in env.properties" />
+        <fail unless="javac.args" message="javac.args is not set in env.properties" />
+        <fail unless="vm.args" message="vm.args is not set in env.properties" />
+
+        <javac srcdir="${main.dir}" destdir="${classes.dir}" includeAntRuntime="false" fork="true" executable="${java.home}/bin/javac">
+            <classpath refid="classpath" />
+            <compilerarg line="${javac.args}"/>
+        </javac>
+        <copy todir="${classes.dir}">
+            <fileset dir="${resources.dir}"/>
+        </copy>
+
+        <java fork="true" classname="example.Main">
+            <jvmarg line="-Djava.home=${java.home} ${vm.args}"/>
+            <classpath>
+                <path refid="classpath"/>
+                <pathelement location="${classes.dir}"/>
+            </classpath>
+        </java>
     </target>
 
     <target name="xml">
