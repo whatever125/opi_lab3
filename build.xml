@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="LAB3" default="build">
+<project name="LAB3" default="clean-build">
     <taskdef resource="net/sf/antcontrib/antlib.xml"/>
 
     <property name="src.dir" location="src"/>
@@ -14,6 +14,7 @@
     <property name="test.results.dir" location="${build.dir}/test-results"/>
     <property name="test.report.dir" location="${test.dir}/report"/>
     <property name="classes.dir" location="${build.dir}/classes"/>
+    <property name="javadoc.dir" value="${build.dir}/javadoc"/>
     <property name="music.file" location="resources/music.mp3"/>
     <property name="classes.file" location="resources/classes.txt"/>
     <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
@@ -83,6 +84,8 @@
     <target name="clean">
         <delete dir="${build.dir}"/>
     </target>
+
+    <target name="clean-build" depends="clean,build"/>
 
     <target name="init-test">
         <mkdir dir="${build.dir}"/>
@@ -196,7 +199,7 @@
         <scp file="${war.file}" todir="${server.username}:${server.password}@${server.host}:${server.remote.dir}" port="${server.port}" trust="true"/>
     </target>
 
-    <target name="doc">
+    <target name="doc" depends="build">
         <fileset dir="${build.dir}" id="files.to.process"/>
         <for param="file">
             <path>
@@ -221,6 +224,16 @@
                 </manifest>
             </sequential>
         </for>
+
+        <mkdir dir="${javadoc.dir}/javadoc"/>
+        <javadoc destdir="${javadoc.dir}/javadoc">
+            <classpath refid="classpath"/>
+            <classpath refid="test.classpath"/>
+            <fileset dir="${src.dir}" includes="**/*.java"/>
+        </javadoc>
+        <war destfile="${war.file}" update="true">
+            <fileset dir="${javadoc.dir}"/>
+        </war>
     </target>
 
     <target name="diff">
