@@ -8,9 +8,11 @@
     <property name="resources.dir" location="${src.dir}/main/resources"/>
     <property name="native2ascii.dir" location="${resources.dir}/native2ascii"/>
     <property name="webapp.dir" location="${src.dir}/main/webapp"/>
+    <property name="main.dir" location="${src.dir}/main"/>
     <property name="test.dir" location="${src.dir}/test"/>
     <property name="test.classes.dir" location="${build.dir}/test-classes"/>
     <property name="test.results.dir" location="${build.dir}/test-results"/>
+    <property name="test.report.dir" location="${test.dir}/report"/>
     <property name="classes.dir" location="${build.dir}/classes"/>
     <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
     <property name="music.file" location="resources/music.mp3"/>
@@ -42,7 +44,7 @@
     </path>
 
     <target name="compile" depends="init">
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" includeAntRuntime="false" release="17">
+        <javac srcdir="${main.dir}" destdir="${classes.dir}" includeAntRuntime="false" release="17">
             <classpath refid="classpath"/>
             <compilerarg line="-Xlint:-options"/>
         </javac>
@@ -82,6 +84,7 @@
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${test.classes.dir}"/>
         <mkdir dir="${test.results.dir}"/>
+        <mkdir dir="${test.report.dir}"/>
     </target>
 
     <target name="compile-test" depends="init-test">
@@ -92,15 +95,43 @@
     </target>
 
     <target name="test" depends="build,compile-test">
-        <junitlauncher haltonfailure="true" printsummary="true">
+        <junitlauncher haltonfailure="false" printsummary="true" failureProperty="test.failed">
             <classpath>
                 <path refid="test.classpath"/>
-                <pathelement location="${build.dir}/test-classes"/>
             </classpath>
-            <testclasses outputdir="${build.dir}/test-results">
+            <testclasses>
                 <fileset dir="${build.dir}/test-classes" includes="**/*Test.class"/>
+                <listener type="legacy-xml" outputdir="${test.results.dir}" sendSysOut="true" sendSysErr="true"/>
             </testclasses>
         </junitlauncher>
+    </target>
+
+    <target name="report" depends="test">
+        <junitreport todir="${test.report.dir}">
+            <fileset dir="${build.dir}/test-results">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${test.report.dir}/html"/>
+        </junitreport>
+
+        <if>
+            <isset property="test.failed"/>
+            <then>
+                <echo message="Tests failed"/>
+            </then>
+            <else>
+                <echo message="Tests passed. Committing report"/>
+                <exec executable="git" failonerror="true">
+                    <arg value="add"/>
+                    <arg value="${test.report.dir}"/>
+                </exec>
+                <exec executable="git" failonerror="true">
+                    <arg value="commit"/>
+                    <arg value="-m"/>
+                    <arg value="Add JUnit report"/>
+                </exec>
+            </else>
+        </if>
     </target>
 
     <target name="xml">
