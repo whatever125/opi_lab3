@@ -14,14 +14,18 @@
     <property name="test.results.dir" location="${build.dir}/test-results"/>
     <property name="test.report.dir" location="${test.dir}/report"/>
     <property name="classes.dir" location="${build.dir}/classes"/>
-    <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
     <property name="music.file" location="resources/music.mp3"/>
     <property name="classes.file" location="resources/classes.txt"/>
     <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
     <property name="manifest.file" location="${build.dir}/webapp/META-INF/MANIFEST.MF"/>
+
     <property name="server.host" value="se.ifmo.ru"/>
     <property name="server.port" value="2222"/>
     <property name="server.remote.dir" value="~/wildfly/wildfly-preview-26.1.3.Final/standalone/deployments"/>
+
+    <property name="alt.name.before" value="TimeBean"/>
+    <property name="alt.name.after" value="ClockBeam"/>
+    <property name="alt.src.dir" location="alt-src"/>
 
     <target name="init">
         <mkdir dir="${build.dir}"/>
@@ -132,6 +136,40 @@
                 </exec>
             </else>
         </if>
+    </target>
+
+    <target name="alt">
+        <copy todir="${alt.src.dir}">
+            <fileset dir="${src.dir}"/>
+        </copy>
+
+        <replace dir="${src.dir}">
+            <include name="**/*.java"/>
+            <include name="**/*.xhtml"/>
+            <include name="**/*.jsp"/>
+            <replacefilter token="${alt.name.before}" value="${alt.name.after}"/>
+        </replace>
+
+        <move todir="${src.dir}">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <include name="**/*.xhtml"/>
+                <include name="**/*.jsp"/>
+            </fileset>
+            <regexpmapper from="(.*)${alt.name.before}(.*)"
+                          to="\1${alt.name.after}\2"/>
+        </move>
+
+        <antcall target="clean"/>
+        <antcall target="build">
+            <param name="war.file" value="${build.dir}/${ant.project.name}-alt.war"/>
+        </antcall>
+
+        <delete dir="${src.dir}"/>
+        <copy todir="${src.dir}">
+            <fileset dir="${alt.src.dir}"/>
+        </copy>
+        <delete dir="${alt.src.dir}"/>
     </target>
 
     <target name="xml">
