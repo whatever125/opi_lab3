@@ -39,7 +39,6 @@
         <fileset dir="${lib.dir}">
             <include name="**/*.jar"/>
         </fileset>
-        <pathelement location="${build.dir}/test-classes"/>
     </path>
 
     <target name="compile" depends="init">
@@ -93,15 +92,15 @@
     </target>
 
     <target name="test" depends="build,compile-test">
-        <junit printsummary="true" haltonfailure="false">
-            <classpath refid="test.classpath"/>
-            <formatter type="brief" usefile="false"/>
-            <batchtest todir="${test.results.dir}">
-                <fileset dir="${test.dir}/java">
-                    <include name="**/*Test.java"/>
-                </fileset>
-            </batchtest>
-        </junit>
+        <junitlauncher haltonfailure="true" printsummary="true">
+            <classpath>
+                <path refid="test.classpath"/>
+                <pathelement location="${build.dir}/test-classes"/>
+            </classpath>
+            <testclasses outputdir="${build.dir}/test-results">
+                <fileset dir="${build.dir}/test-classes" includes="**/*Test.class"/>
+            </testclasses>
+        </junitlauncher>
     </target>
 
     <target name="xml">
