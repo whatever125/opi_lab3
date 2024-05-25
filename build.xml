@@ -211,9 +211,9 @@
     </target>
 
     <target name="env" depends="init">
-        <fail unless="java.home" message="java.home is not set in env.properties" />
-        <fail unless="javac.args" message="javac.args is not set in env.properties" />
-        <fail unless="vm.args" message="vm.args is not set in env.properties" />
+        <fail unless="java.home" message="java.home is not set in properties"/>
+        <fail unless="javac.args" message="javac.args is not set in properties"/>
+        <fail unless="vm.args" message="vm.args is not set in properties"/>
 
         <javac srcdir="${main.dir}" destdir="${classes.dir}" includeAntRuntime="false" fork="true" executable="${java.home}/bin/javac">
             <classpath refid="classpath" />
@@ -402,5 +402,4 @@
             <arg value="pop"/>
         </exec>
     </target>
-
 </project>
