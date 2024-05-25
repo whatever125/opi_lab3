@@ -2,6 +2,8 @@
 <project name="LAB3" default="clean-build">
     <taskdef resource="net/sf/antcontrib/antlib.xml"/>
 
+    <property file="build.properties"/>
+
     <property name="src.dir" location="src"/>
     <property name="build.dir" location="build"/>
     <property name="lib.dir" location="lib"/>
@@ -15,21 +17,12 @@
     <property name="test.report.dir" location="${test.dir}/report"/>
     <property name="classes.dir" location="${build.dir}/classes"/>
     <property name="javadoc.dir" value="${build.dir}/javadoc"/>
+    <property name="alt.src.dir" location="alt-src"/>
+
     <property name="music.file" location="resources/music.mp3"/>
     <property name="classes.file" location="resources/classes.txt"/>
     <property name="war.file" location="${build.dir}/${ant.project.name}.war"/>
     <property name="manifest.file" location="${build.dir}/webapp/META-INF/MANIFEST.MF"/>
-    <property name="java.home" location="~/Library/Java/JavaVirtualMachines/jbr-17.0.7/Contents/Home/"/>
-    <property name="javac.args" value="-Xlint:-options"/>
-    <property name="vm.args" value="-Xms512m -Xmx1024m"/>
-
-    <property name="server.host" value="se.ifmo.ru"/>
-    <property name="server.port" value="2222"/>
-    <property name="server.remote.dir" value="~/wildfly/wildfly-preview-26.1.3.Final/standalone/deployments"/>
-
-    <property name="alt.name.before" value="TimeBean"/>
-    <property name="alt.name.after" value="ClockBeam"/>
-    <property name="alt.src.dir" location="alt-src"/>
 
     <target name="init">
         <mkdir dir="${build.dir}"/>
@@ -114,90 +107,6 @@
                 <listener type="legacy-xml" outputdir="${test.results.dir}" sendSysOut="true" sendSysErr="true"/>
             </testclasses>
         </junitlauncher>
-    </target>
-
-    <target name="report" depends="test">
-        <junitreport todir="${test.report.dir}">
-            <fileset dir="${build.dir}/test-results">
-                <include name="TEST-*.xml"/>
-            </fileset>
-            <report format="frames" todir="${test.report.dir}/html"/>
-        </junitreport>
-
-        <if>
-            <isset property="test.failed"/>
-            <then>
-                <echo message="Tests failed"/>
-            </then>
-            <else>
-                <echo message="Tests passed. Committing report"/>
-                <exec executable="git" failonerror="true">
-                    <arg value="add"/>
-                    <arg value="${test.report.dir}"/>
-                </exec>
-                <exec executable="git" failonerror="true">
-                    <arg value="commit"/>
-                    <arg value="-m"/>
-                    <arg value="Add JUnit report"/>
-                </exec>
-            </else>
-        </if>
-    </target>
-
-    <target name="alt">
-        <copy todir="${alt.src.dir}">
-            <fileset dir="${src.dir}"/>
-        </copy>
-
-        <replace dir="${src.dir}">
-            <include name="**/*.java"/>
-            <include name="**/*.xhtml"/>
-            <include name="**/*.jsp"/>
-            <replacefilter token="${alt.name.before}" value="${alt.name.after}"/>
-        </replace>
-
-        <move todir="${src.dir}">
-            <fileset dir="${src.dir}">
-                <include name="**/*.java"/>
-                <include name="**/*.xhtml"/>
-                <include name="**/*.jsp"/>
-            </fileset>
-            <regexpmapper from="(.*)${alt.name.before}(.*)"
-                          to="\1${alt.name.after}\2"/>
-        </move>
-
-        <antcall target="clean"/>
-        <antcall target="build">
-            <param name="war.file" value="${build.dir}/${ant.project.name}-alt.war"/>
-        </antcall>
-
-        <delete dir="${src.dir}"/>
-        <copy todir="${src.dir}">
-            <fileset dir="${alt.src.dir}"/>
-        </copy>
-        <delete dir="${alt.src.dir}"/>
-    </target>
-
-    <target name="env" depends="init">
-        <fail unless="java.home" message="java.home is not set in env.properties" />
-        <fail unless="javac.args" message="javac.args is not set in env.properties" />
-        <fail unless="vm.args" message="vm.args is not set in env.properties" />
-
-        <javac srcdir="${main.dir}" destdir="${classes.dir}" includeAntRuntime="false" fork="true" executable="${java.home}/bin/javac">
-            <classpath refid="classpath" />
-            <compilerarg line="${javac.args}"/>
-        </javac>
-        <copy todir="${classes.dir}">
-            <fileset dir="${resources.dir}"/>
-        </copy>
-
-        <java fork="true" classname="example.Main">
-            <jvmarg line="-Djava.home=${java.home} ${vm.args}"/>
-            <classpath>
-                <path refid="classpath"/>
-                <pathelement location="${classes.dir}"/>
-            </classpath>
-        </java>
     </target>
 
     <target name="xml">
@@ -301,6 +210,56 @@
         </if>
     </target>
 
+    <target name="env" depends="init">
+        <fail unless="java.home" message="java.home is not set in env.properties" />
+        <fail unless="javac.args" message="javac.args is not set in env.properties" />
+        <fail unless="vm.args" message="vm.args is not set in env.properties" />
+
+        <javac srcdir="${main.dir}" destdir="${classes.dir}" includeAntRuntime="false" fork="true" executable="${java.home}/bin/javac">
+            <classpath refid="classpath" />
+            <compilerarg line="${javac.args}"/>
+        </javac>
+        <copy todir="${classes.dir}">
+            <fileset dir="${resources.dir}"/>
+        </copy>
+
+        <java fork="true" classname="example.Main">
+            <jvmarg line="-Djava.home=${java.home} ${vm.args}"/>
+            <classpath>
+                <path refid="classpath"/>
+                <pathelement location="${classes.dir}"/>
+            </classpath>
+        </java>
+    </target>
+
+    <target name="report" depends="test">
+        <junitreport todir="${test.report.dir}">
+            <fileset dir="${build.dir}/test-results">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${test.report.dir}/html"/>
+        </junitreport>
+
+        <if>
+            <isset property="test.failed"/>
+            <then>
+                <echo message="Tests failed"/>
+            </then>
+            <else>
+                <echo message="Tests passed. Committing report"/>
+                <exec executable="git" failonerror="true">
+                    <arg value="add"/>
+                    <arg value="${test.report.dir}"/>
+                </exec>
+                <exec executable="git" failonerror="true">
+                    <arg value="commit"/>
+                    <arg value="-m"/>
+                    <arg value="Add JUnit report"/>
+                </exec>
+            </else>
+        </if>
+    </target>
+
     <target name="team">
         <exec executable="git" failonerror="true">
             <arg value="stash"/>
@@ -344,10 +303,44 @@
             <arg value="checkout"/>
             <arg value="${current.branch}"/>
         </exec>
-        <exec executable="git" failonerror="true">
+        <exec executable="git" failonerror="false">
             <arg value="stash"/>
             <arg value="pop"/>
         </exec>
+    </target>
+
+    <target name="alt">
+        <copy todir="${alt.src.dir}">
+            <fileset dir="${src.dir}"/>
+        </copy>
+
+        <replace dir="${src.dir}">
+            <include name="**/*.java"/>
+            <include name="**/*.xhtml"/>
+            <include name="**/*.jsp"/>
+            <replacefilter token="${alt.name.before}" value="${alt.name.after}"/>
+        </replace>
+
+        <move todir="${src.dir}">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <include name="**/*.xhtml"/>
+                <include name="**/*.jsp"/>
+            </fileset>
+            <regexpmapper from="(.*)${alt.name.before}(.*)"
+                          to="\1${alt.name.after}\2"/>
+        </move>
+
+        <antcall target="clean"/>
+        <antcall target="build">
+            <param name="war.file" value="${build.dir}/${ant.project.name}-alt.war"/>
+        </antcall>
+
+        <delete dir="${src.dir}"/>
+        <copy todir="${src.dir}">
+            <fileset dir="${alt.src.dir}"/>
+        </copy>
+        <delete dir="${alt.src.dir}"/>
     </target>
 
     <target name="history">
@@ -383,6 +376,11 @@
                                     <arg value="@{commit}"/>
                                 </exec>
                                 <antcall target="compile"/>
+                                <exec executable="git" output="${build.dir}/diff.txt" failonerror="false">
+                                    <arg value="diff"/>
+                                    <arg value="@{commit}"/>
+                                    <arg value="${current.commit}"/>
+                                </exec>
                                 <echo message="&#10;Revision @{commit} compiled successfully&#10;&#10;"/>
                                 <property name="revision.compiled" value="true"/>
                             </try>
@@ -399,7 +397,7 @@
             <arg value="checkout"/>
             <arg value="${current.branch}"/>
         </exec>
-        <exec executable="git" failonerror="true">
+        <exec executable="git" failonerror="false">
             <arg value="stash"/>
             <arg value="pop"/>
         </exec>
