@@ -81,6 +81,11 @@
             <artifactId>logback-classic</artifactId>
             <version>1.2.9</version>
         </dependency>
+        <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>jboss-logmanager</artifactId>
+            <version>3.0.6.Final</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -93,6 +98,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
                     <source>16</source>
                     <target>16</target>
