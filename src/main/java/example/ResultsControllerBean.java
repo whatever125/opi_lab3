@@ -3,6 +3,8 @@ package example;
 import example.db.DAOFactory;
 import example.db.ResultDAO;
 import example.entity.ResultEntity;
+import example.mbeans.NumberOfPoints;
+import example.mbeans.NumberOfPointsMBean;
 import example.utils.PointChecker;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -13,6 +15,8 @@ import jakarta.servlet.http.HttpSession;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.management.*;
+import java.lang.management.ManagementFactory;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -57,6 +61,11 @@ public class ResultsControllerBean implements Serializable {
     private ArrayList<ResultEntity> results = new ArrayList<>();
 
     /**
+     * MBean - Number of points.
+     */
+    private NumberOfPointsMBean numberOfPoints;
+
+    /**
      * Initializes the results controller bean by fetching all results from the database
      * and storing them in the results list. This method is called after the bean's
      * properties have been injected.
@@ -68,6 +77,17 @@ public class ResultsControllerBean implements Serializable {
         results = new ArrayList<>(resultsEntities);
         Collections.reverse(results);
         log.info("Results initialized with {} entries.", results.size());
+
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        ObjectName name;
+        try {
+            name = new ObjectName("example.mbeans:type=NumberOfPoints");
+            numberOfPoints = new NumberOfPoints();
+            mbs.registerMBean(numberOfPoints, name);
+        } catch (MalformedObjectNameException | NotCompliantMBeanException | InstanceAlreadyExistsException |
+                 MBeanRegistrationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -90,6 +110,11 @@ public class ResultsControllerBean implements Serializable {
 
         ResultEntity entity = ResultEntity.builder().x(x).y(y).r(r).success(success).sessionId(sessionId).dateTime(ZonedDateTime.now()).executionTime(executionTime).build();
         results.add(0, entity);
+
+        numberOfPoints.incrementAllPoints();
+        if (!entity.isSuccess()) {
+             numberOfPoints.incrementMissingPoints();
+        }
 
         DAOFactory.getInstance().getResultDAO().addNewResult(entity);
 //        log.info("Added new result to the db: X={}, Y={}, R={}", x, y, r);

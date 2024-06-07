@@ -3,7 +3,11 @@ package example.mbeans;
 import example.db.ResultDAOImpl;
 
 public interface NumberOfPointsMBean {
-    public int allPoints(ResultDAOImpl resultDAO);
+    int getAllPoints();
 
-    public int missingPoints();
+    void incrementAllPoints();
+
+    int getMissingPoints();
+
+    void incrementMissingPoints();
 }
