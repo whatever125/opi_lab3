@@ -1,13 +1,13 @@
 package example.mbeans;
 
-import example.db.ResultDAOImpl;
-
 public interface NumberOfPointsMBean {
-    int getAllPoints();
-
     void incrementAllPoints();
 
-    int getMissingPoints();
+    int getAllPoints();
 
-    void incrementMissingPoints();
+    void incrementMissPoints();
+
+    int getMissPoints();
+
+    void resetConsecutiveMisses();
 }

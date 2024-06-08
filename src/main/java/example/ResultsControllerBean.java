@@ -5,6 +5,8 @@ import example.db.ResultDAO;
 import example.entity.ResultEntity;
 import example.mbeans.NumberOfPoints;
 import example.mbeans.NumberOfPointsMBean;
+import example.mbeans.PercentageOfMisses;
+import example.mbeans.PercentageOfMissesMBean;
 import example.utils.PointChecker;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -66,6 +68,11 @@ public class ResultsControllerBean implements Serializable {
     private NumberOfPointsMBean numberOfPoints;
 
     /**
+     * MBean - Percentage of misses.
+     */
+    private PercentageOfMissesMBean percentageOfMisses;
+
+    /**
      * Initializes the results controller bean by fetching all results from the database
      * and storing them in the results list. This method is called after the bean's
      * properties have been injected.
@@ -79,11 +86,14 @@ public class ResultsControllerBean implements Serializable {
         log.info("Results initialized with {} entries.", results.size());
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        ObjectName name;
         try {
-            name = new ObjectName("example.mbeans:type=NumberOfPoints");
+            ObjectName numberOfPointsName = new ObjectName("example.mbeans:type=NumberOfPoints");
             numberOfPoints = new NumberOfPoints();
-            mbs.registerMBean(numberOfPoints, name);
+            mbs.registerMBean(numberOfPoints, numberOfPointsName);
+
+            ObjectName percentageOfMissesName = new ObjectName("example.mbeans:type=PercentageOfMisses");
+            percentageOfMisses = new PercentageOfMisses(numberOfPoints);
+            mbs.registerMBean(percentageOfMisses, percentageOfMissesName);
         } catch (MalformedObjectNameException | NotCompliantMBeanException | InstanceAlreadyExistsException |
                  MBeanRegistrationException e) {
             throw new RuntimeException(e);
@@ -112,8 +122,10 @@ public class ResultsControllerBean implements Serializable {
         results.add(0, entity);
 
         numberOfPoints.incrementAllPoints();
-        if (!entity.isSuccess()) {
-             numberOfPoints.incrementMissingPoints();
+        if (entity.isSuccess()) {
+            numberOfPoints.resetConsecutiveMisses();
+        } else {
+            numberOfPoints.incrementMissPoints();
         }
 
         DAOFactory.getInstance().getResultDAO().addNewResult(entity);
